@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { updateUsage } from '../services/usage-monitor'
+import { SettingsPanel } from '../ui/settings-panel'
 
 /**
  * Register all extension commands
@@ -38,8 +39,17 @@ export function registerCommands(context: vscode.ExtensionContext) {
     },
   )
 
+  // Open the appearance settings panel
+  const settingsCommand = vscode.commands.registerCommand(
+    'claude-usage.openSettings',
+    () => {
+      SettingsPanel.show(context.extensionUri)
+    },
+  )
+
   // Register all commands
   context.subscriptions.push(noopCommand)
   context.subscriptions.push(refreshCommand)
   context.subscriptions.push(loginCommand)
+  context.subscriptions.push(settingsCommand)
 }

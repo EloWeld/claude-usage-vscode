@@ -1,15 +1,35 @@
 import * as vscode from 'vscode'
-import { ClaudeAPIClient } from '../claude-client'
+import { ClaudeAPIClient, UsageError } from '../claude-client'
 import { AuthData, ClaudeUsage } from '../types'
 import {
   updateStatusBar,
   showUpdating,
   showFetchError,
   showUpdateError,
+  showRateLimited,
 } from '../ui/status-bar'
+import { recordUsage } from './history'
 
 let apiClient: ClaudeAPIClient | undefined
 let currentAuthData: AuthData | undefined
+let backoffTimer: NodeJS.Timeout | undefined
+
+const MAX_BACKOFF_SECONDS = 3600
+
+/** Schedule a single retry after a server-suggested delay (429 Retry-After). */
+function scheduleBackoff(seconds?: number) {
+  if (!seconds || seconds <= 0) {
+    return
+  }
+  if (backoffTimer) {
+    clearTimeout(backoffTimer)
+  }
+  const delay = Math.min(seconds, MAX_BACKOFF_SECONDS) * 1000
+  backoffTimer = setTimeout(() => {
+    backoffTimer = undefined
+    void updateUsage()
+  }, delay)
+}
 
 /**
  * Initialize the usage monitor with authentication data
@@ -34,6 +54,11 @@ export async function updateUsage() {
     const usage = await apiClient.getUsage()
 
     if (usage) {
+      if (backoffTimer) {
+        clearTimeout(backoffTimer)
+        backoffTimer = undefined
+      }
+      recordUsage(usage)
       updateStatusBar(usage, currentAuthData)
 
       // Check if we should show notifications
@@ -47,8 +72,18 @@ export async function updateUsage() {
       showFetchError()
     }
   } catch (error) {
-    console.error('Error updating usage:', error)
-    showUpdateError(error)
+    if (error instanceof UsageError) {
+      if (error.isRateLimited) {
+        showRateLimited(error.info.retryAfterSeconds)
+        scheduleBackoff(error.info.retryAfterSeconds)
+      } else {
+        // Network / server error — keep it quiet with the fetch-error state.
+        showFetchError()
+      }
+    } else {
+      console.error('Error updating usage:', error)
+      showUpdateError(error)
+    }
   }
 }
 

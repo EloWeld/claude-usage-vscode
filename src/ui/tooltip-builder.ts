@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { ClaudeUsage, AuthData } from '../types'
 import { createProgressBar } from './progress-bar'
 import { formatResetTime } from '../utils/time-formatter'
+import { getHistory, computeBurn, sessionSparkline } from '../services/history'
 
 function makeTooltip(): vscode.MarkdownString {
   const t = new vscode.MarkdownString()
@@ -18,6 +19,56 @@ function getStatusIcon(percent: number): string {
     return '$(warning)'
   }
   return '$(check)'
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes < 60) {
+    return `${minutes}m`
+  }
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
+
+/**
+ * Append a usage-analytics section: a sparkline of session usage over the
+ * tracked window plus the burn rate and projected time to the session limit.
+ */
+function appendAnalytics(
+  tooltip: vscode.MarkdownString,
+  currentSession: number,
+): void {
+  const history = getHistory()
+  const burn = computeBurn(history, currentSession)
+  if (!burn) {
+    return
+  }
+
+  tooltip.appendMarkdown(`---\n\n`)
+  tooltip.appendMarkdown(`**$(graph) Analytics** · last ${formatDuration(Math.round(burn.spanHours * 60))}\n\n`)
+
+  const spark = sessionSparkline(history)
+  if (spark) {
+    tooltip.appendMarkdown(`Session \`${spark}\`\n\n`)
+  }
+
+  const rate = burn.sessionRatePerHour
+  if (rate > 0.1) {
+    tooltip.appendMarkdown(`$(flame) Burning **${rate.toFixed(1)}%/h** (session)\n\n`)
+    if (burn.sessionEtaMinutes !== null) {
+      tooltip.appendMarkdown(
+        `$(watch) ~${formatDuration(burn.sessionEtaMinutes)} to 100% at this pace\n\n`,
+      )
+    }
+  } else if (rate < -0.1) {
+    tooltip.appendMarkdown(`$(check) Session recovering (window reset)\n\n`)
+  } else {
+    tooltip.appendMarkdown(`$(dash) Session steady\n\n`)
+  }
+
+  if (burn.weeklyRatePerHour > 0.05) {
+    tooltip.appendMarkdown(`$(calendar) Weekly +${burn.weeklyRatePerHour.toFixed(1)}%/h\n\n`)
+  }
 }
 
 function formatSubscriptionType(raw: string): string {
@@ -91,6 +142,9 @@ export function createMainTooltip(
     tooltip.appendMarkdown(`\n`)
   }
 
+  // Analytics: burn rate + sparkline over the tracked window
+  appendAnalytics(tooltip, usage.five_hour?.utilization ?? 0)
+
   // Alert section (excludes oauth apps)
   const highestUsage = Math.max(
     usage.five_hour?.utilization || 0,
@@ -113,7 +167,7 @@ export function createMainTooltip(
 
   // Footer
   tooltip.appendMarkdown(
-    `$(globe) [Usage](https://claude.ai/settings/usage) · $(sync) [Refresh](command:claude-usage.refresh) · $(gear) [Settings](command:workbench.action.openSettings?%22claudeUsage%22)\n\n`,
+    `$(globe) [Usage](https://claude.ai/settings/usage) · $(sync) [Refresh](command:claude-usage.refresh) · $(gear) [Settings](command:claude-usage.openSettings)\n\n`,
   )
   const timeStr = new Date().toLocaleTimeString([], {
     hour: '2-digit',
@@ -192,6 +246,36 @@ export function createFetchErrorTooltip(): vscode.MarkdownString {
   tooltip.appendMarkdown(`- Authentication token may have expired\n\n`)
   tooltip.appendMarkdown(`---\n\n`)
   tooltip.appendMarkdown(`$(sync) [Retry](command:claude-usage.refresh)\n\n`)
+
+  return tooltip
+}
+
+/**
+ * Create rate-limited (HTTP 429) tooltip.
+ */
+export function createRateLimitTooltip(
+  retryAfterSeconds?: number,
+): vscode.MarkdownString {
+  const tooltip = makeTooltip()
+
+  tooltip.appendMarkdown(`### $(clock) Rate Limited (429)\n\n`)
+  tooltip.appendMarkdown(
+    `The Claude API is throttling usage requests. Data may be stale until the limit clears.\n\n`,
+  )
+
+  if (retryAfterSeconds && retryAfterSeconds > 0) {
+    const mins = Math.floor(retryAfterSeconds / 60)
+    const secs = retryAfterSeconds % 60
+    const human = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
+    tooltip.appendMarkdown(`$(watch) Retry suggested in **${human}**\n\n`)
+  } else {
+    tooltip.appendMarkdown(
+      `$(info) Polling will back off automatically and resume shortly.\n\n`,
+    )
+  }
+
+  tooltip.appendMarkdown(`---\n\n`)
+  tooltip.appendMarkdown(`$(sync) [Retry now](command:claude-usage.refresh)\n\n`)
 
   return tooltip
 }

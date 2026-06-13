@@ -5,14 +5,19 @@ import {
   showAuthRequired,
   showAuthError,
   getStatusBarItem,
+  refreshStatusBar,
 } from './ui/status-bar'
 import { initializeMonitor, updateUsage } from './services/usage-monitor'
+import { initHistory } from './services/history'
 import { registerCommands } from './commands'
 
 let updateInterval: NodeJS.Timeout | undefined
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Claude Stats Monitor activated')
+
+  // Initialize usage history storage (analytics)
+  initHistory(context.globalState)
 
   // Create status bar item
   const statusBarItem = createStatusBarItem()
@@ -21,8 +26,34 @@ export function activate(context: vscode.ExtensionContext) {
   // Register all commands
   registerCommands(context)
 
+  // React to settings changes: re-render appearance instantly, and restart the
+  // polling timer if the interval changed.
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (!e.affectsConfiguration('claudeUsage')) {
+        return
+      }
+      refreshStatusBar()
+      if (e.affectsConfiguration('claudeUsage.updateInterval')) {
+        restartPolling()
+      }
+    }),
+  )
+
   // Load auth and start monitoring
   loadAuthAndStartMonitoring()
+}
+
+function restartPolling() {
+  const config = vscode.workspace.getConfiguration('claudeUsage')
+  const intervalSeconds = config.get<number>('updateInterval') || 300
+
+  if (updateInterval) {
+    clearInterval(updateInterval)
+  }
+  updateInterval = setInterval(async () => {
+    await updateUsage()
+  }, intervalSeconds * 1000)
 }
 
 async function loadAuthAndStartMonitoring() {
@@ -39,16 +70,7 @@ async function loadAuthAndStartMonitoring() {
       await updateUsage()
 
       // Start periodic updates (default 5 minutes)
-      const config = vscode.workspace.getConfiguration('claudeUsage')
-      const intervalSeconds = config.get<number>('updateInterval') || 300
-
-      if (updateInterval) {
-        clearInterval(updateInterval)
-      }
-
-      updateInterval = setInterval(async () => {
-        await updateUsage()
-      }, intervalSeconds * 1000)
+      restartPolling()
     } else {
       showAuthRequired()
     }

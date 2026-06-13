@@ -36,6 +36,10 @@
       {
         "command": "claude-usage.login",
         "title": "Login to Claude Code"
+      },
+      {
+        "command": "claude-usage.openSettings",
+        "title": "Claude Usage: Open Appearance Settings"
       }
     ],
     "configuration": {
@@ -66,7 +70,106 @@
             "Show whichever is higher (original behavior)"
           ],
           "default": "both",
-          "description": "What to display in the status bar"
+          "description": "Which usage window to display in the status bar"
+        },
+        "claudeUsage.statusBarStyle": {
+          "type": "string",
+          "enum": [
+            "percent",
+            "dual",
+            "dots",
+            "brackets",
+            "minimal",
+            "blocks",
+            "braille",
+            "gradient",
+            "vmeter",
+            "vtwin",
+            "vgauge",
+            "iconmeter",
+            "iconsmall"
+          ],
+          "enumDescriptions": [
+            "ASCII — percent, e.g. ✼ 45%",
+            "ASCII — session · weekly, e.g. ✼ 45% · 23%",
+            "ASCII — dot meter, e.g. ✼ ●●●●●○○○○○ 45%",
+            "ASCII — bracket bar, e.g. ✼ [####······] 45%",
+            "ASCII — minimal, e.g. 45%",
+            "Graphic — block bar, e.g. ✼ ▰▰▰▰▱▱▱▱ 45%",
+            "Graphic — braille meter, e.g. ✼ ⣿⣿⣦⣀ 45%",
+            "Graphic — gradient bar, e.g. ✼ ▓▓▓▓░░░░ 45%",
+            "Vertical — single meter, e.g. ✼ ▆ 45%",
+            "Vertical — twin bars (session vs weekly), e.g. ✼ ▆▃ 45·23",
+            "Vertical — smooth gauge, e.g. ✼ ███▄▁▁▁▁ 45%",
+            "Icon — codicon circle meter (vector icons)",
+            "Icon — codicon circle meter, smaller circles"
+          ],
+          "default": "vgauge",
+          "description": "How the usage is rendered in the status bar. Use the Appearance Settings panel for a live preview."
+        },
+        "claudeUsage.statusBarStyleWeekly": {
+          "type": "string",
+          "enum": [
+            "same",
+            "percent",
+            "dots",
+            "brackets",
+            "blocks",
+            "braille",
+            "gradient",
+            "vmeter",
+            "vgauge",
+            "iconmeter",
+            "iconsmall"
+          ],
+          "default": "vmeter",
+          "description": "Style for the weekly bar when Window = Both. 'same' uses the main style. Applies to bar styles only."
+        },
+        "claudeUsage.statusBarIcon": {
+          "type": "string",
+          "default": "✼",
+          "description": "Leading icon shown before the usage (leave empty to hide). Ignored by the 'minimal' style."
+        },
+        "claudeUsage.barLength": {
+          "type": "number",
+          "default": 8,
+          "minimum": 4,
+          "maximum": 40,
+          "description": "Number of segments in bar-based styles (dots, brackets, blocks, braille, gradient, vertical gauge)"
+        },
+        "claudeUsage.colorEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Tint the status bar text yellow/red as usage crosses the warn/critical thresholds"
+        },
+        "claudeUsage.warnThreshold": {
+          "type": "number",
+          "default": 75,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Usage percent at which the status bar turns yellow"
+        },
+        "claudeUsage.critThreshold": {
+          "type": "number",
+          "default": 90,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Usage percent at which the status bar turns red"
+        },
+        "claudeUsage.normalColor": {
+          "type": "string",
+          "default": "",
+          "description": "Custom hex color for normal usage (e.g. #cccccc). Empty = theme default."
+        },
+        "claudeUsage.warnColor": {
+          "type": "string",
+          "default": "",
+          "description": "Custom hex color for the warn level (e.g. #e5c07b). Empty = theme warning color."
+        },
+        "claudeUsage.critColor": {
+          "type": "string",
+          "default": "",
+          "description": "Custom hex color for the critical level (e.g. #e06c75). Empty = theme error color."
         }
       }
     }
@@ -96,6 +199,7 @@
     "typescript": "^4.9.3"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.36",
     "axios": "^1.6.0",
     "vsce": "^2.15.0"
   }

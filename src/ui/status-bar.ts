@@ -7,12 +7,56 @@ import {
   createUpdatingTooltip,
   createFetchErrorTooltip,
   createUpdateErrorTooltip,
+  createRateLimitTooltip,
 } from './tooltip-builder'
+import {
+  renderStatusText,
+  statusColor,
+  ColorConfig,
+  RenderConfig,
+  StyleId,
+  DisplayWindow,
+} from './styles'
 
+// A single status bar item — kept single (rather than split into colored
+// segments) so other extensions' items never wedge themselves between parts of
+// our display. The trade-off: color applies to the whole item, not just the bar.
+const COMMAND = 'claude-usage.openSettings'
 let statusBarItem: vscode.StatusBarItem
 
+// Last successfully rendered data, kept so the status bar can be re-rendered
+// instantly when appearance settings change (without waiting for a refetch).
+let lastUsage: ClaudeUsage | undefined
+let lastAuthData: AuthData | undefined
+
+/** Read the appearance-related settings into a single config object. */
+function readRenderConfig(): RenderConfig {
+  const config = vscode.workspace.getConfiguration('claudeUsage')
+  const weekly = config.get<string>('statusBarStyleWeekly', 'vmeter')
+  return {
+    style: config.get<StyleId>('statusBarStyle', 'vgauge'),
+    display: config.get<DisplayWindow>('statusBarDisplay', 'both'),
+    icon: config.get<string>('statusBarIcon', '✼'),
+    barLength: config.get<number>('barLength', 8),
+    styleWeekly: weekly === 'same' ? undefined : (weekly as StyleId),
+  }
+}
+
+/** Read color-related settings. */
+function readColorConfig(): ColorConfig {
+  const config = vscode.workspace.getConfiguration('claudeUsage')
+  return {
+    enabled: config.get<boolean>('colorEnabled', true),
+    warn: config.get<number>('warnThreshold', 75),
+    crit: config.get<number>('critThreshold', 90),
+    normalColor: config.get<string>('normalColor', ''),
+    warnColor: config.get<string>('warnColor', ''),
+    critColor: config.get<string>('critColor', ''),
+  }
+}
+
 /**
- * Create and initialize the status bar item
+ * Create and initialize the status bar item.
  */
 export function createStatusBarItem(): vscode.StatusBarItem {
   statusBarItem = vscode.window.createStatusBarItem(
@@ -22,85 +66,124 @@ export function createStatusBarItem(): vscode.StatusBarItem {
 
   statusBarItem.text = '✼ $(sync~spin)'
   statusBarItem.tooltip = 'Initializing Claude Stats Monitor...'
-  statusBarItem.command = 'claude-usage.noop'
+  statusBarItem.command = COMMAND
   statusBarItem.show()
 
   return statusBarItem
 }
 
+/** Set a simple state: text + tooltip + optional whole-item color. */
+function setState(
+  text: string,
+  tooltip: vscode.MarkdownString | string,
+  color?: string | vscode.ThemeColor,
+) {
+  statusBarItem.text = text
+  statusBarItem.color = color
+  statusBarItem.backgroundColor = undefined
+  statusBarItem.tooltip = tooltip
+  statusBarItem.command = COMMAND
+}
+
 /**
- * Update status bar with usage data
+ * Update status bar with usage data.
  */
 export function updateStatusBar(usage: ClaudeUsage, authData: AuthData) {
-  const fiveHourPercent = usage.five_hour?.utilization || 0
-  const sevenDayPercent = usage.seven_day?.utilization || 0
+  lastUsage = usage
+  lastAuthData = authData
 
-  const config = vscode.workspace.getConfiguration('claudeUsage')
-  const display = config.get<string>('statusBarDisplay', 'both')
+  const renderConfig = readRenderConfig()
+  const colorConfig = readColorConfig()
 
-  let text: string
-  switch (display) {
-    case 'session':  text = `✼ ${fiveHourPercent.toFixed(0)}%`; break
-    case 'weekly':   text = `✼ ${sevenDayPercent.toFixed(0)}%`; break
-    case 'highest':  text = `✼ ${Math.max(fiveHourPercent, sevenDayPercent).toFixed(0)}%`; break
-    default:         text = `✼ ${fiveHourPercent.toFixed(0)}% · ${sevenDayPercent.toFixed(0)}%`; break
+  setState(
+    renderStatusText(usage, renderConfig),
+    createMainTooltip(usage, authData),
+    statusColor(usage, renderConfig.display, colorConfig),
+  )
+}
+
+/**
+ * Re-render the status bar from the last known data using the current settings.
+ * Used when appearance settings change so the bar updates immediately.
+ */
+export function refreshStatusBar(): ClaudeUsage | undefined {
+  if (lastUsage && lastAuthData) {
+    updateStatusBar(lastUsage, lastAuthData)
   }
+  return lastUsage
+}
 
-  statusBarItem.text = text
-  statusBarItem.color = undefined
-  statusBarItem.backgroundColor = undefined
-
-  statusBarItem.tooltip = createMainTooltip(usage, authData)
+/**
+ * Get the last successfully fetched usage, for settings preview seeding.
+ */
+export function getLastUsage(): ClaudeUsage | undefined {
+  return lastUsage
 }
 
 /**
  * Show authentication required state
  */
 export function showAuthRequired() {
-  statusBarItem.text = '$(error)'
-  statusBarItem.color = new vscode.ThemeColor('errorForeground')
-  statusBarItem.tooltip = createAuthRequiredTooltip()
-  statusBarItem.command = 'claude-usage.noop'
+  setState(
+    '$(error)',
+    createAuthRequiredTooltip(),
+    new vscode.ThemeColor('errorForeground'),
+  )
 }
 
 /**
  * Show authentication error state
  */
 export function showAuthError(error: unknown) {
-  statusBarItem.text = '$(error)'
-  statusBarItem.color = new vscode.ThemeColor('errorForeground')
-  statusBarItem.tooltip = createAuthErrorTooltip(error)
+  setState(
+    '$(error)',
+    createAuthErrorTooltip(error),
+    new vscode.ThemeColor('errorForeground'),
+  )
 }
 
 /**
  * Show updating state
  */
 export function showUpdating() {
-  statusBarItem.text = '✼ $(sync~spin)'
-  statusBarItem.color = undefined
-  statusBarItem.tooltip = createUpdatingTooltip()
+  setState('✼ $(sync~spin)', createUpdatingTooltip())
+}
+
+/**
+ * Show rate-limited (429) state.
+ */
+export function showRateLimited(retryAfterSeconds?: number) {
+  setState(
+    '$(clock) 429',
+    createRateLimitTooltip(retryAfterSeconds),
+    new vscode.ThemeColor('editorWarning.foreground'),
+  )
 }
 
 /**
  * Show fetch error state
  */
 export function showFetchError() {
-  statusBarItem.text = '$(warning)'
-  statusBarItem.color = new vscode.ThemeColor('editorWarning.foreground')
-  statusBarItem.tooltip = createFetchErrorTooltip()
+  setState(
+    '$(warning)',
+    createFetchErrorTooltip(),
+    new vscode.ThemeColor('editorWarning.foreground'),
+  )
 }
 
 /**
  * Show update error state
  */
 export function showUpdateError(error: unknown) {
-  statusBarItem.text = '$(warning)'
-  statusBarItem.color = new vscode.ThemeColor('editorWarning.foreground')
-  statusBarItem.tooltip = createUpdateErrorTooltip(error)
+  setState(
+    '$(warning)',
+    createUpdateErrorTooltip(error),
+    new vscode.ThemeColor('editorWarning.foreground'),
+  )
 }
 
 /**
- * Get the status bar item
+ * Get the status bar item.
  */
 export function getStatusBarItem(): vscode.StatusBarItem {
   return statusBarItem
