@@ -61,6 +61,14 @@
       {
         "command": "claude-usage.openSettings",
         "title": "Claude Usage: Open Appearance Settings"
+      },
+      {
+        "command": "claude-usage.openUsage",
+        "title": "Claude Usage: Open Usage Panel"
+      },
+      {
+        "command": "claude-usage.openMenu",
+        "title": "Claude Usage: Menu"
       }
     ],
     "configuration": {

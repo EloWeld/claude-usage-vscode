@@ -21,7 +21,7 @@ import {
 // A single status bar item — kept single (rather than split into colored
 // segments) so other extensions' items never wedge themselves between parts of
 // our display. The trade-off: color applies to the whole item, not just the bar.
-const COMMAND = 'claude-usage.openSettings'
+const COMMAND = 'claude-usage.openMenu'
 let statusBarItem: vscode.StatusBarItem
 
 // Last successfully rendered data, kept so the status bar can be re-rendered

@@ -3,6 +3,19 @@
 All notable changes to **Claude Usage Bars** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.2] — 2026-06-14
+
+### Added
+
+- **Usage panel** — the webview now has two tabs: **Usage** (a day/week usage-over-time chart, current-window breakdown with reset times, and burn rate) and **Settings** (the appearance controls).
+- **Click menu** — clicking the status bar opens a quick menu to jump to Usage, Settings, or Refresh.
+- Usage history is now retained for **7 days** (was 24h) to power the weekly chart.
+
+### Changed
+
+- The tooltip's **Usage** link now opens the in-editor Usage panel instead of the Claude website.
+- The tooltip's **Settings** link and the status bar open the panel on the matching tab.
+
 ## [0.3.1] — 2026-06-14
 
 ### Changed

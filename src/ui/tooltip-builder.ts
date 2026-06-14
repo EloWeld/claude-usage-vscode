@@ -167,7 +167,7 @@ export function createMainTooltip(
 
   // Footer
   tooltip.appendMarkdown(
-    `$(globe) [Usage](https://claude.ai/settings/usage) · $(sync) [Refresh](command:claude-usage.refresh) · $(gear) [Settings](command:claude-usage.openSettings)\n\n`,
+    `$(graph) [Usage](command:claude-usage.openUsage) · $(sync) [Refresh](command:claude-usage.refresh) · $(gear) [Settings](command:claude-usage.openSettings)\n\n`,
   )
   const timeStr = new Date().toLocaleTimeString([], {
     hour: '2-digit',

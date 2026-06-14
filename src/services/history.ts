@@ -8,7 +8,7 @@ import { ClaudeUsage } from '../types'
  */
 
 const KEY = 'claudeUsage.history'
-const WINDOW_MS = 24 * 60 * 60 * 1000 // keep ~1 day
+const WINDOW_MS = 7 * 24 * 60 * 60 * 1000 // keep ~1 week (for the weekly chart)
 const MIN_GAP_MS = 60 * 1000 // collapse points recorded within 1 minute
 
 export interface UsagePoint {
