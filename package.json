@@ -1,5 +1,5 @@
 {
-  "name": "claude-monkey-bar",
+  "name": "claude-usage-bars",
   "author": {
     "name": "Jonathan Mackay",
     "url": "https://github.com/jjsmackay"
@@ -9,7 +9,7 @@
     "url": "https://github.com/EloWeld/claude-usage-vscode"
   },
   "license": "MIT",
-  "displayName": "Claude Status Bar",
+  "displayName": "Claude Usage Bars",
   "description": "✼ 67% · Claude session and weekly usage limits real-time on the VS Code status bar",
   "version": "0.3.0",
   "publisher": "mtglitch",
