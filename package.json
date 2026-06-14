@@ -15,7 +15,7 @@
   "license": "MIT",
   "displayName": "Claude Usage Bars",
   "description": "Highly customizable Claude Code usage in your status bar — 13 styles, a live settings panel, burn-rate analytics, and separate session/weekly bars.",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "mtglitch",
   "engines": {
     "vscode": "^1.74.0"
