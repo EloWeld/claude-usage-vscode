@@ -11,3 +11,6 @@ vsc-extension-quickstart.md
 **/*.ts
 node_modules/**/*.ts
 node_modules/**/test/**
+node_modules/@vscode/codicons/**
+!node_modules/@vscode/codicons/dist/**
+node_modules/@vscode/codicons/dist/*.ts

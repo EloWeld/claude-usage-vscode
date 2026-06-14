@@ -6,12 +6,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jjsmackay/claude-usage-vscode"
+    "url": "https://github.com/EloWeld/claude-usage-vscode"
   },
+  "license": "MIT",
   "displayName": "Claude Status Bar",
   "description": "✼ 67% · Claude session and weekly usage limits real-time on the VS Code status bar",
-  "version": "0.2.0",
-  "publisher": "CleverMonkey",
+  "version": "0.3.0",
+  "publisher": "mtglitch",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -196,11 +197,11 @@
     "eslint": "^8.28.0",
     "glob": "^13.0.6",
     "mocha": "^11.7.5",
-    "typescript": "^4.9.3"
+    "typescript": "^4.9.3",
+    "vsce": "^2.15.0"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.36",
-    "axios": "^1.6.0",
-    "vsce": "^2.15.0"
+    "axios": "^1.6.0"
   }
 }
