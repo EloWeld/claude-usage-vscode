@@ -8,18 +8,38 @@
     "type": "git",
     "url": "https://github.com/EloWeld/claude-usage-vscode"
   },
+  "homepage": "https://github.com/EloWeld/claude-usage-vscode#readme",
+  "bugs": {
+    "url": "https://github.com/EloWeld/claude-usage-vscode/issues"
+  },
   "license": "MIT",
   "displayName": "Claude Usage Bars",
-  "description": "✼ 67% · Claude session and weekly usage limits real-time on the VS Code status bar",
+  "description": "Highly customizable Claude Code usage in your status bar — 13 styles, a live settings panel, burn-rate analytics, and separate session/weekly bars.",
   "version": "0.3.0",
   "publisher": "mtglitch",
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Visualization"
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "claude code",
+    "usage",
+    "status bar",
+    "rate limit",
+    "token usage",
+    "statusline",
+    "anthropic",
+    "monitor"
   ],
   "icon": "resources/claude-color.png",
+  "galleryBanner": {
+    "color": "#2b2118",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
