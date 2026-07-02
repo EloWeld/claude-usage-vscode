@@ -72,17 +72,18 @@ export function createStatusBarItem(): vscode.StatusBarItem {
   return statusBarItem
 }
 
-/** Set a simple state: text + tooltip + optional whole-item color. */
+/** Set a simple state: text + tooltip + optional whole-item color + command. */
 function setState(
   text: string,
   tooltip: vscode.MarkdownString | string,
   color?: string | vscode.ThemeColor,
+  command: string = COMMAND,
 ) {
   statusBarItem.text = text
   statusBarItem.color = color
   statusBarItem.backgroundColor = undefined
   statusBarItem.tooltip = tooltip
-  statusBarItem.command = COMMAND
+  statusBarItem.command = command
 }
 
 /**
@@ -180,6 +181,29 @@ export function showUpdateError(error: unknown) {
     createUpdateErrorTooltip(error),
     new vscode.ThemeColor('editorWarning.foreground'),
   )
+}
+
+/**
+ * Live-quota not enabled yet: prompt the user to install the statusline tap.
+ * Clicking runs the enable command directly.
+ */
+export function showLiveQuotaSetup() {
+  const tip = new vscode.MarkdownString(
+    '**Claude Usage Bars**\n\nClick to enable live quota.\n\n' +
+      'Reads usage locally from Claude Code\'s statusline — no network call, no token.',
+  )
+  setState('✼ $(plug) Enable', tip, undefined, 'claude-usage.enableLiveQuota')
+}
+
+/**
+ * Tap installed but Claude Code hasn't rendered a statusline yet (no cache).
+ */
+export function showWaitingForSession() {
+  const tip = new vscode.MarkdownString(
+    '**Claude Usage Bars**\n\nWaiting for data. Open a Claude Code session once — ' +
+      'its statusline fills this in — then it updates every turn.',
+  )
+  setState('✼ $(watch)', tip)
 }
 
 /**

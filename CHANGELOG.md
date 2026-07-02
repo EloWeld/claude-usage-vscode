@@ -3,6 +3,21 @@
 All notable changes to **Claude Usage Bars** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.3] — 2026-06-14
+
+### Changed
+
+- **Usage now comes from Claude Code's statusline, read locally — no network call and no OAuth token.** Claude Code (the authorized client) hands its `statusLine.command` the rate-limit / model / context / cost data on every render; the extension installs a tap as that command which caches the data locally and reads it back. This keeps the extension inside Anthropic's terms (the previous OAuth-usage-endpoint approach did not).
+- **Enable Live Quota** / **Disable Live Quota** commands install/remove the statusline tap, chaining (and restoring) any existing statusline so your bar is unchanged.
+
+### Removed
+
+- All direct calls to the Claude usage API and reading of the subscription OAuth token (Keychain / credentials file).
+
+### Note
+
+- Values are as fresh as Claude Code's last statusline render — live during an active session, last-seen when idle. Open a Claude Code session once to populate the data.
+
 ## [0.3.2] — 2026-06-14
 
 ### Added

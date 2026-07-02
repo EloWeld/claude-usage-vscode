@@ -2,6 +2,10 @@ import * as vscode from 'vscode'
 import { updateUsage } from '../services/usage-monitor'
 import { SettingsPanel, PanelTab } from '../ui/settings-panel'
 import { getLastUsage } from '../ui/status-bar'
+import {
+  installStatusline,
+  uninstallStatusline,
+} from '../services/statusline-install'
 
 interface MenuItem extends vscode.QuickPickItem {
   tab?: PanelTab
@@ -90,6 +94,44 @@ export function registerCommands(context: vscode.ExtensionContext) {
     },
   )
 
+  const workspacePath = () =>
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
+  const tapSource = () => context.asAbsolutePath('resources/statusline-tap.js')
+
+  // Enable live quota: install the statusline tap into Claude Code's settings.
+  const enableCommand = vscode.commands.registerCommand(
+    'claude-usage.enableLiveQuota',
+    async () => {
+      const result = installStatusline(tapSource(), workspacePath())
+      if (result.ok) {
+        vscode.window.showInformationMessage(
+          'Live quota enabled. Open a Claude Code session once — its statusline fills in the usage, then it updates every turn.',
+        )
+      } else {
+        vscode.window.showErrorMessage(
+          `Couldn't enable live quota: ${result.error}`,
+        )
+      }
+      await updateUsage()
+    },
+  )
+
+  // Disable live quota: remove the tap and restore the original statusline.
+  const disableCommand = vscode.commands.registerCommand(
+    'claude-usage.disableLiveQuota',
+    async () => {
+      const result = uninstallStatusline(workspacePath())
+      if (result.ok) {
+        vscode.window.showInformationMessage('Live quota disabled.')
+      } else {
+        vscode.window.showErrorMessage(
+          `Couldn't disable live quota: ${result.error}`,
+        )
+      }
+      await updateUsage()
+    },
+  )
+
   // Register all commands
   context.subscriptions.push(noopCommand)
   context.subscriptions.push(refreshCommand)
@@ -97,4 +139,6 @@ export function registerCommands(context: vscode.ExtensionContext) {
   context.subscriptions.push(settingsCommand)
   context.subscriptions.push(usageCommand)
   context.subscriptions.push(menuCommand)
+  context.subscriptions.push(enableCommand)
+  context.subscriptions.push(disableCommand)
 }

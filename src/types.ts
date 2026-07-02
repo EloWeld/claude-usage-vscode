@@ -1,5 +1,4 @@
 export interface AuthData {
-  accessToken: string
   email: string
   displayName?: string
   subscriptionType?: string

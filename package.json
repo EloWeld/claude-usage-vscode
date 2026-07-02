@@ -1,5 +1,5 @@
 {
-  "name": "claude-usage-bars",
+  "name": "claude-usage-monitor-mtg",
   "author": {
     "name": "Jonathan Mackay",
     "url": "https://github.com/jjsmackay"
@@ -13,9 +13,9 @@
     "url": "https://github.com/EloWeld/claude-usage-vscode/issues"
   },
   "license": "MIT",
-  "displayName": "Claude Usage Bars",
+  "displayName": "Claude Usage Bars — Live Quota",
   "description": "Highly customizable Claude Code usage in your status bar — 13 styles, a live settings panel, burn-rate analytics, and separate session/weekly bars.",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "publisher": "mtglitch",
   "engines": {
     "vscode": "^1.74.0"
@@ -69,6 +69,14 @@
       {
         "command": "claude-usage.openMenu",
         "title": "Claude Usage: Menu"
+      },
+      {
+        "command": "claude-usage.enableLiveQuota",
+        "title": "Claude Usage: Enable Live Quota"
+      },
+      {
+        "command": "claude-usage.disableLiveQuota",
+        "title": "Claude Usage: Disable Live Quota"
       }
     ],
     "configuration": {
@@ -212,7 +220,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "test:unit": "npm run compile && mocha out/test/suite/progress-bar.test.js out/test/suite/time-formatter.test.js --ui tdd --color"
+    "test:unit": "npm run compile && mocha out/test/suite/progress-bar.test.js out/test/suite/time-formatter.test.js out/test/suite/statusline-cycle.test.js --ui tdd --color"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
